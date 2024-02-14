@@ -35,7 +35,7 @@ from clu import metric_writers
 import jax
 from jax import random
 from jax.experimental import multihost_utils
-from jax.experimental.global_device_array import GlobalDeviceArray
+from jax import Array
 import jax.numpy as jnp
 import numpy as np
 import seqio
@@ -122,7 +122,7 @@ def train(
     run_eval_before_training: bool = False,
     train_state_initializer_cls: Type[
         utils.TrainStateInitializer] = utils.TrainStateInitializer,
-    use_gda: bool = True,
+    use_gda: bool = False,
     use_jax_array: bool = False,
     use_orbax: bool = False,
     verify_matching_vocabs_fn: Optional[
@@ -288,7 +288,6 @@ def train(
   train_iter = utils.prepare_train_iter(
       train_iter,
       checkpoint_cfg=checkpoint_cfg,
-      use_gda=use_gda,
       partitioner=partitioner,
       data_layout=data_layout)
 
@@ -389,8 +388,7 @@ def train(
           train_state_shape=train_state_initializer.global_train_state_shape,
           partitioner=partitioner,
           ds_iter=train_iter,
-          model_dir=model_dir,
-          use_gda=use_gda)
+          model_dir=model_dir)
       train_state = checkpoint_manager.restore(
           restore_paths, valid_restore_cfg,
           utils.get_fallback_state(valid_restore_cfg, _init, init_rng))
@@ -583,7 +581,7 @@ def train(
                                      partitioner.data_partition_spec),
           lambda idx: dummy[idx])
     else:
-      return GlobalDeviceArray.from_callback(dummy.shape, partitioner.mesh,
+      return Array.from_callback(dummy.shape, partitioner.mesh,
                                              partitioner.data_partition_spec,
                                              lambda idx: dummy[idx])
 
